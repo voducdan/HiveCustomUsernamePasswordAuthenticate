@@ -1,0 +1,60 @@
+//PasswdAuthenticationProvider.java
+
+package org.apache.hive.service.auth;
+
+import javax.security.sasl.AuthenticationException;
+
+public interface PasswdAuthenticationProvider {
+
+  void Authenticate(String user, String password) throws AuthenticationException;
+}
+
+//CustomAuthenticator.java
+
+package org.apache.hive.service.auth;
+
+import java.util.Hashtable;
+import javax.security.sasl.AuthenticationException;
+//import org.apache.hive.service.auth.PasswdAuthenticationProvider;
+
+public class CustomAuthenticator implements PasswdAuthenticationProvider {
+
+        Hashtable<String, String> store = null;
+
+        public CustomAuthenticator () {
+                store = new Hashtable<String, String>();
+                store.put("hadoop", "1");
+        }
+
+        @Override
+        public void Authenticate(String user, String  password)
+                throws AuthenticationException {
+
+                String storedPasswd = store.get(user);
+
+                if (storedPasswd != null && storedPasswd.equals(password))
+                        return;
+
+                throw new AuthenticationException("SampleAuthenticator: Error validating user");
+        }
+
+}
+-- create directory /opt/hive/conf/org/apache/hive/service/auth
+-- create file PasswdAuthenticationProvider.java && CustomAuthenticator.java
+-- build PasswdAuthenticationProvider.java
+javac //PasswdAuthenticationProvider.java
+-- build CustomAuthenticator.java
+javac CustomAuthenticator.java
+-- build to jar
+jar cvf CustomAuthenticator.jar CustomAuthenticator.class
+-- copy to hive lib
+cp CustomAuthenticator.jar /opt/hive/lib
+-- edit hive-site file
+ <property>
+                <name>hive.server2.authentication</name>
+                <value>CUSTOM</value>
+        </property>
+        <property>
+                <name>hive.server2.custom.authentication.class</name>
+                <value>org.apache.hive.service.auth.CustomAuthenticator</value>
+        </property>
